@@ -1,90 +1,126 @@
+"use strict";
+
+var pageTitle='testtitle';
+
+function replaceText(str)
+{
+    var str1 = String(str);
+    return str1.replace(/\n/g,"<br/>");
+}
+
+
 var dmAtix = angular.module("dmAtix", ['ngMaterial'])
+.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
+	$routeProvider.when('/', {
+		templateUrl: '/global.html',
+		controller: 'viewCtrl',
+		controllerAs: 'view'
+		
+	}).when('/:partial',{
+		templateUrl: function(params){ return '/'+params.partial; },
+		controller: 'viewCtrl',
+		controllerAs: 'view'					
+	});
+
+	$locationProvider.html5Mode(true);
+	
+}])
 .config(['$provide', '$mdThemingProvider', function($provide, $mdThemingProvider) {
+	
+	$mdThemingProvider.theme('default')
+	.primaryPalette('indigo')
+    .backgroundPalette('grey',{
+		'default':'50'
+	})
+	.accentPalette('blue-grey',{
+		'default':'800',
+		'hue-1':'50',
+		'hue-2':'100',
+		'hue-3':'300'
+	});
+	
+
+	/**
+	* Of form:
+	* {
+	*  'blue':{ // Palette name
+	*      '50': #abcdef, // Color name: color value
+	*      '100': #abcdee,
+	*          ...
+	*      },
+	*      ...
+	* }
+	* @type {{}}
+	*/
+	var colorStore = {};
+	//fetch the colors out of the themeing provider
+	Object.keys($mdThemingProvider._PALETTES).forEach(
+	// clone the pallete colors to the colorStore var
+	function(palleteName) {
+		var pallete = $mdThemingProvider._PALETTES[palleteName];
+		var colors  = [];
+		colorStore[palleteName]=colors;
+		Object.keys(pallete).forEach(function(colorName) {
+			// use an regex to look for hex colors, ignore the rest
+			if (/#[0-9A-Fa-f]{6}|0-9A-Fa-f]{8}\b/.exec(pallete[colorName])) {
+				colors[colorName] = pallete[colorName];
+			}
+		});
+	});
+
+	/**
+	* mdThemeColors service
+	*
+	* The mdThemeColors service will provide easy, programmatic access to the themes that have been configured
+	* So that the colors can be used according to intent instead of hard coding color values.
+	*
+	* e.g.
+	*
+	* <span ng-style="{background: mdThemeColors.primary['50']}">Hello World!</span>
+	*
+	* So the theme can change but the code doesn't need to.
+	*/
+	$provide.factory('mdThemeColors', [function() {
+
+		var service = {};
+
+		var getColorFactory = function(intent){
+
+			return function(){
+				var colors = $mdThemingProvider._THEMES['default'].colors[intent];
+				var name = colors.name
+				// Append the colors with links like hue-1, etc
+				colorStore[name].default = colorStore[name][colors.hues['default']]
+				colorStore[name].hue1 = colorStore[name][colors.hues['hue-1']]
+				colorStore[name].hue2 = colorStore[name][colors.hues['hue-2']]
+				colorStore[name].hue3 = colorStore[name][colors.hues['hue-3']]
+				return colorStore[name];
+			}
+		}
 
 		/**
-         * Of form:
-         * {
-         *  'blue':{ // Palette name
-         *      '50': #abcdef, // Color name: color value
-         *      '100': #abcdee,
-         *          ...
-         *      },
-         *      ...
-         * }
-         * @type {{}}
-         */
-        var colorStore = {};
+		* Define the getter methods for accessing the colors
+		*/
 
-        //fetch the colors out of the themeing provider
-        Object.keys($mdThemingProvider._PALETTES).forEach(
-            // clone the pallete colors to the colorStore var
-            function(palleteName) {
-                var pallete = $mdThemingProvider._PALETTES[palleteName];
-                var colors  = [];
-                colorStore[palleteName]=colors;
-                Object.keys(pallete).forEach(function(colorName) {
-                    // use an regex to look for hex colors, ignore the rest
-                    if (/#[0-9A-Fa-f]{6}|0-9A-Fa-f]{8}\b/.exec(pallete[colorName])) {
-                        colors[colorName] = pallete[colorName];
-                    }
-                });
-            });
+		Object.defineProperty(service,'primary', {
+		get: getColorFactory('primary')
+		});
 
-        /**
-         * mdThemeColors service
-         *
-         * The mdThemeColors service will provide easy, programmatic access to the themes that have been configured
-         * So that the colors can be used according to intent instead of hard coding color values.
-         *
-         * e.g.
-         *
-         * <span ng-style="{background: mdThemeColors.primary['50']}">Hello World!</span>
-         *
-         * So the theme can change but the code doesn't need to.
-         */
-        $provide.factory('mdThemeColors', [
-            function() {
-				
-                var service = {};
+		Object.defineProperty(service,'accent', {
+		get: getColorFactory('accent')
+		});
 
-                var getColorFactory = function(intent){
-					
-                    return function(){
-                        var colors = $mdThemingProvider._THEMES['default'].colors[intent];
-                        var name = colors.name
-                        // Append the colors with links like hue-1, etc
-                        colorStore[name].default = colorStore[name][colors.hues['default']]
-                        colorStore[name].hue1 = colorStore[name][colors.hues['hue-1']]
-                        colorStore[name].hue2 = colorStore[name][colors.hues['hue-2']]
-                        colorStore[name].hue3 = colorStore[name][colors.hues['hue-3']]
-                        return colorStore[name];
-                    }
-                }
+		Object.defineProperty(service,'warn', {
+		get: getColorFactory('warn')
+		});
 
-                /**
-                 * Define the getter methods for accessing the colors
-                 */
-					
-                Object.defineProperty(service,'primary', {
-                    get: getColorFactory('primary')
-                });
+		Object.defineProperty(service,'background', {
+		get: getColorFactory('background')
+		});
 
-                Object.defineProperty(service,'accent', {
-                    get: getColorFactory('accent')
-                });
-
-                Object.defineProperty(service,'warn', {
-                    get: getColorFactory('warn')
-                });
-
-                Object.defineProperty(service,'background', {
-                    get: getColorFactory('background')
-                });
-                
-                return service;
-            }
-        ]);
-    }]);
+		return service;
+	}]);
+}]);
 
 dmAtix.factory("dmContent", function () {
 	var chap=0;
@@ -306,4 +342,33 @@ dmAtix.factory("dmContent", function () {
 		transclude: true,
         template: "<div ng-transclude></div>"
     };
+})
+.directive('prettyprint', function() {
+    return {
+        restrict: 'C',
+        link: function postLink(scope, element, attrs) {
+              element.html(prettyPrintOne(replaceText(element.html()),'',true));
+        }
+    };
+})
+.controller('main',function($scope,$route, $routeParams, $location, $mdSidenav, mdThemeColors){
+	
+	$scope.color=mdThemeColors;
+	$scope.g={};
+	$scope.g.pageTitle='pageTitle';
+	$scope.basepath=$location.protocol()+'://'+$location.host();
+
+    $scope.index = 0;
+
+    $scope.toggleSidenav = function (menuId) {
+        $mdSidenav(menuId).toggle();
+    };
+
+
+})
+.controller('viewCtrl',function($scope,$timeout, mdThemeColors){
+	$scope.color=mdThemeColors;
+	$timeout(function(){
+		$scope.g.pageTitle=pageTitle;
+	});	
 })

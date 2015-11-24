@@ -27,6 +27,7 @@
     "angular-animate": "^1.4.8",
     "angular-aria": "^1.4.8",
     "angular-material": "http://github.com/angular/bower-material/tarball/v1.0.0-rc4",
+    "jquery": "^2.1.4",
     "jsdoc": "git+https://github.com/jsdoc3/jsdoc.git#3.4.0"
   }
 }
