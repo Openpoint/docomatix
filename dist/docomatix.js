@@ -9,7 +9,7 @@ function replaceText(str)
 }
 
 
-var dmAtix = angular.module("dmAtix", ['ngMaterial'])
+var dmAtix = angular.module("dmAtix", ['ngRoute','ngMaterial'])
 .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
 	$routeProvider.when('/', {
 		templateUrl: '/global.html',
