@@ -1,0 +1,33 @@
+
+{
+	"__comment":"**---------Please use the 'node_modules/.bin/docomatix' start script provided. All paths will then be relative to <project_web_root>/ -------**",
+    "tags": {
+        "allowUnknownTags": true
+    },
+    "source": {
+		"include":["node_modules/docomatix"],
+		"exclude":["node_modules/docomatix/node_modules","node_modules/docomatix/demo","node_modules/docomatix/extend/template/static"],
+        "includePattern": ".+\\.js(doc)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+        
+    },
+    "plugins": [
+		"node_modules/docomatix/node_modules/jsdoc/plugins/markdown",
+		"node_modules/docomatix/extend/plugins/ngdoc.js"
+    ],
+    "templates": {
+        "cleverLinks": true,
+        "monospaceLinks": true,
+        "default": {
+            "outputSourceFiles": true
+        }
+    },
+	"opts": {
+		"destination": "dmx_demo",
+		"recurse": true,
+		"verbose": false,
+		"readme":"node_modules/docomatix/README.md",
+		"template":"node_modules/docomatix/extend/template/"
+	}
+
+}

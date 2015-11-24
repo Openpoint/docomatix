@@ -5,6 +5,8 @@ var app = express();
 var server = require('http').Server(app);
 var port = 8082;
 
+console.log(__dirname)
+
 var docLocation='/documents';
 
 app.get(['/help', '/help/*'], function(req, res){
