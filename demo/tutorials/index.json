@@ -1,0 +1,24 @@
+{
+	"dad": {
+		"title": "Parent one",
+		"children": {
+			"dad1": {
+				"title": "First child"
+			},
+			"dad2": {
+				"title": "Second child"
+			}
+		}
+	},
+	"mam": {
+		"title": "Parent two",
+		"children": {
+			"mam1": {
+				"title": "First child"
+			},
+			"mam2": {
+				"title": "Second child"
+			}
+		}
+	}
+}

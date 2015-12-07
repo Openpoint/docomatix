@@ -5,12 +5,28 @@
         "allowUnknownTags": true
     },
     "source": {
-		"include":["node_modules/docomatix"],
-		"exclude":["node_modules/docomatix/node_modules","node_modules/docomatix/demo","node_modules/docomatix/extend/template/static"],
+		"include":[
+			"node_modules/docomatix"
+		],
+		"exclude":[
+			
+			"node_modules/docomatix/node_modules/angular",
+			"node_modules/docomatix/node_modules/angular-animate",
+			"node_modules/docomatix/node_modules/angular-aria",
+			"node_modules/docomatix/node_modules/angular-material",
+			"node_modules/docomatix/node_modules/angular-route",
+			"node_modules/docomatix/node_modules/jsdoc/node_modules",
+			"node_modules/docomatix/node_modules/jsdoc/templates",
+			"node_modules/docomatix/node_modules/jsdoc/plugins",
+			"node_modules/docomatix/node_modules/express",
+			"node_modules/docomatix/node_modules/jquery",
+			"node_modules/docomatix/demo",
+			"node_modules/docomatix/extend/template/static"],
         "includePattern": ".+\\.js(doc)?$",
         "excludePattern": "(^|\\/|\\\\)_"
         
     },
+    "scrap":"node_modules/docomatix/node_modules",
     "plugins": [
 		"node_modules/docomatix/node_modules/jsdoc/plugins/markdown",
 		"node_modules/docomatix/extend/plugins/ngdoc.js"
@@ -23,11 +39,14 @@
         }
     },
 	"opts": {
+		"template":"node_modules/docomatix/extend/template/",
 		"destination": "dmx_demo",
 		"recurse": true,
 		"verbose": false,
+		"mainpagetitle":"Meta-Docomatix",
 		"readme":"node_modules/docomatix/README.md",
-		"template":"node_modules/docomatix/extend/template/"
+		"tutorials":"node_modules/docomatix/demo/tutorials"
+		
 	}
 
 }

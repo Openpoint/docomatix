@@ -16,7 +16,9 @@
     "node",
     "angular"
   ],
-  "author": "Michael Jonker",
+  "author": {
+    "name": "Michael Jonker"
+  },
   "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/openpoint/docomatix/issues"
@@ -31,5 +33,12 @@
     "express": "^4.13.3",
     "jquery": "^2.1.4",
     "jsdoc": "git+https://github.com/jsdoc3/jsdoc.git#3.4.0"
-  }
+  },
+  "gitHead": "fb605f2c8bb3b934a8158a78ffe3999c846ad6db",
+  "readme": "# docomatix\nDocument generator built on JSDOC tailored for Node + Angular modular projects\n",
+  "readmeFilename": "README.md",
+  "_id": "docomatix@0.0.1",
+  "_shasum": "b6cd4f9343cc65beb8083d0c25c77f2bc9cffbf2",
+  "_from": "git+https://github.com/Openpoint/docomatix.git",
+  "_resolved": "git+https://github.com/Openpoint/docomatix.git#fb605f2c8bb3b934a8158a78ffe3999c846ad6db"
 }

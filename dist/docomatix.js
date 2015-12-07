@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 var pageTitle='testtitle';
 
 function replaceText(str)
@@ -8,11 +10,24 @@ function replaceText(str)
     return str1.replace(/\n/g,"<br/>");
 }
 
+/**
+ * @module dmatix
+ * @chapter client
+ * 
+ * */
+
+var factory={};
+
+/**
+ * A test function
+ * @global
+ * */
+function testfunction(){}
 
 var dmAtix = angular.module("dmAtix", ['ngRoute','ngMaterial'])
 .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
 	$routeProvider.when('/', {
-		templateUrl: '/global.html',
+		templateUrl: '/base.html',
 		controller: 'viewCtrl',
 		controllerAs: 'view'
 		
@@ -122,7 +137,16 @@ var dmAtix = angular.module("dmAtix", ['ngRoute','ngMaterial'])
 	}]);
 }]);
 
-dmAtix.factory("dmContent", function () {
+/**
+ * # Test factory
+ * @ngdoc factory
+ * */
+function dmcontent() {
+	
+	/**
+	 * Keep track of the chapter
+	 * 
+	 * */
 	var chap=0;
 	var verse=0;
 	var items={};
@@ -180,7 +204,13 @@ dmAtix.factory("dmContent", function () {
 		}
 		
 	}
-})
+}
+
+
+
+
+
+dmAtix.factory("dmContent", dmcontent)
 
 .directive("dmSidemen",["dmContent", function(dmContent){
 
@@ -190,14 +220,16 @@ dmAtix.factory("dmContent", function () {
         },
     };
 }])
+/**
+ * See {@tutorial test}
+ * @ngdoc directive
+ * @name module:client/dmatix~dmSidemen
+ * */
 .directive("dmChapterTitle",["dmContent", function(dmContent){
 	var dm = dmContent;
     return {
 		transclude: true,
-        template:"<h1 class='md-title' layout layout-padding style='background:{{color.primary.default}}; position:relative; border-bottom:1px solid {{color.primary.hue2}}' md-ink-ripple>"+
-					"<div ng-transclude flex></div>"+
-					"<div class='material-icons state' style='color:{{color.primary.hue3}}'>arrow_drop_down_circle</div>"+
-				"</h1>",		
+		replace:true,		
         link: function (scope, element) {
 			
 			var id=dm.chap(true);
@@ -221,19 +253,23 @@ dmAtix.factory("dmContent", function () {
 					}
 				}
 			})			
-        }
+        },
+        template:"<md-toolbar class='ctitle' style='border-bottom:1px solid {{color.primary.hue2}}; cursor:pointer' md-ink-ripple><h1 class='md-title' layout layout-padding >"+
+					"<div ng-transclude flex></div>"+
+					"<div class='material-icons state' style='color:{{color.primary.hue3}}'>arrow_drop_down_circle</div>"+
+				"</h1></md-toolbar>"
 
     };
 }])
 .directive("dmVerseTitle",["dmContent","$timeout", function(dmContent,$timeout){
 	var dm = dmContent;
     return {
-		transclude: true,		
+		transclude: true,
+		replace:true,		
         link: function (scope, element) {
 			var id=dm.verse(true);
 			element.on('click',function(){
 				var players=dm.click(id,'verse');
-				console.log(players);
 				var container = players.target;
 				var parent = players.parent;
 				if(container.open){
@@ -247,7 +283,7 @@ dmAtix.factory("dmContent", function () {
 				}
 			})			
         },
-        template: "<h2 style='background:{{color.primary.hue1}}; position:relative;' layout layout-padding class='md-subhead md-whiteframe-1dp' md-ink-ripple>"+
+        template: "<h2 class='vtitle md-subhead md-whiteframe-3dp' style='background:{{color.primary.hue1}}; position:relative; cursor:pointer' layout layout-padding  md-ink-ripple>"+
 						"<div ng-transclude flex ></div>"+
 						"<div class='material-icons state' style='color:{{color.primary.hue2}}'>expand_more</div>"+
 					"</h2>"
@@ -259,6 +295,7 @@ dmAtix.factory("dmContent", function () {
 	var dm = dmContent;
     return {
 		transclude: true,
+		replace:true,
         link: function (scope, element) {
 			var toggle = function (open) {
 				if (open) {
@@ -273,10 +310,9 @@ dmAtix.factory("dmContent", function () {
 				element.css("max-height", element[0].scrollHeight + add + 'px');
 			}
 			toggle(true);
-			console.log(dm.chap(false));
 			dm.make(dm.chap(false),'chap',toggle,false,fixheight,false);
         },
-        template: "<div layout='column' flex ng-transclude></div>"
+        template: "<md-content class='expander' layout='column' flex ng-transclude></md-content>"
     };
 }])
 
@@ -284,10 +320,12 @@ dmAtix.factory("dmContent", function () {
 	var dm = dmContent;
     return {
 		transclude: true,
+		replace:true,
         link: function (scope, element) {
 			var toggle = function (open) {
 				if (open) {
 					element.css("max-height", '0px');
+					element.css("background", scope.color.primary.hue3);
 					element.parent().removeClass('copen').addClass('cclosed');
 				} else {
 					element.css("max-height", element[0].scrollHeight + 'px');
@@ -297,7 +335,7 @@ dmAtix.factory("dmContent", function () {
 			toggle(true);
 			dm.make(dm.chap(false),'chap',toggle,false,false,false);
         },
-        template: "<div layout='column' layout-padding flex ng-transclude></div>"
+        template: "<md-content class='expander' layout='column' layout-padding flex ng-transclude></md-content>"
     };
 }])
 
@@ -305,12 +343,14 @@ dmAtix.factory("dmContent", function () {
 	var dm = dmContent;
     return {
 		transclude: true,
+		replace:true,
         link: function (scope, element) {
 			
 			var toggle = function (open) {
 				
-				if (open) {
+				if (open) {				
 					element.css("max-height", '0px');
+					element.css("background", scope.color.primary.hue3);
 					element.parent().removeClass('vopen').addClass('vclosed');
 				} else {
 					element.css("max-height", element[0].scrollHeight + 'px');
@@ -328,31 +368,98 @@ dmAtix.factory("dmContent", function () {
 			
 					
         },
-        template: "<div layout='column' layout-padding flex ng-transclude></div>"
+        template: "<md-content class='expander' layout='column' layout-padding flex><div class='dmInner' ng-transclude></div></md-content>"
     };
 }])
 .directive("dmItemWrapper",function(){
     return {
 		transclude: true,
-        template: "<div layout='column' style='background:{{color.primary.hue3}}' ng-transclude></div>"
+		replace:true,
+        template: "<div style='background:{{color.primary.hue3}}' ng-transclude></div>"
     };
 })
 .directive("dmMenulink",function(){
     return {
 		transclude: true,
-        template: "<div ng-transclude></div>"
+		replace:true,
+        template: "<div class='dmItem' ng-transclude></div>"
     };
 })
-.directive('prettyprint', function() {
-    return {
-        restrict: 'C',
-        link: function postLink(scope, element, attrs) {
-              element.html(prettyPrintOne(replaceText(element.html()),'',true));
-        }
-    };
-})
-.controller('main',function($scope,$route, $routeParams, $location, $mdSidenav, mdThemeColors){
+.directive('prism', function($window,$location,$rootScope,$anchorScroll,$timeout) {
+	return {
+		restrict: 'C',
+		link: function postLink(scope, element, attrs) {
+			$location.hash($location.$$hash.replace('line','code.'));
+			scope.hashno=$location.$$hash.split('.')[1];
+			
 	
+			
+			//var text = $(element[0]).html();
+			//text = text.replace(/\[del\]\([\s\S*?\)\[\/del\]/ig, '');
+			
+			//console.log(text);
+			//$(element[0]).html(text);
+			/*
+			element.html(prettyPrintOne(replaceText(element.html()),'',true));
+			var source = document.getElementsByClassName('prettyprint source linenums');
+			var i = 0;
+			var lineNumber = 0;
+			var lineId;
+			var lines;
+			var totalLines;
+			var anchorHash;
+
+			if (source && source[0]) {
+				anchorHash = document.location.hash.substring(1);
+				lines = source[0].getElementsByTagName('li');
+				totalLines = lines.length;
+
+				for (; i < totalLines; i++) {
+					lineNumber++;
+					lineId = 'line' + lineNumber;
+					lines[i].id = lineId;
+										
+					if (lineId === anchorHash) {
+						lines[i].className += ' selected';						
+					}
+				}
+			};
+			* */
+			$timeout(function(){
+				Prism.highlightElement(element[0]);
+				$('#code .comment').css('display','inline-block');
+				$('#code .comment').each(function(){
+					var height=$(this).outerHeight();
+					var self=this;
+					var tout;
+					$(this).attr({
+						'data-h':height+'px'
+					})
+					.css('height',height)					
+					.hover(function(){
+						if($(self).hasClass('shrink')){
+							clearTimeout(tout);
+							$(self).css({'height':$(self).attr('data-h'),'marginTop':'18px'});
+						}
+					},function(){
+						if($(self).hasClass('shrink')){
+							$(self).css('height',0);
+							tout=setTimeout(function(){
+								$(self).css('marginTop',0);
+							},500);
+						}						
+					});
+					
+				})
+				$('#code .comment').css('display','inline');
+			});
+			
+		}
+	};
+
+})
+.controller('main',function($scope,$route, $routeParams, $location, $mdSidenav,$timeout, mdThemeColors){
+
 	$scope.color=mdThemeColors;
 	$scope.g={};
 	$scope.g.pageTitle='pageTitle';
@@ -363,10 +470,37 @@ dmAtix.factory("dmContent", function () {
     $scope.toggleSidenav = function (menuId) {
         $mdSidenav(menuId).toggle();
     };
-
-
 })
 .controller('viewCtrl',function($scope,$timeout, mdThemeColors){
+	$scope.toggle=true;
+	
+	$scope.$watch('toggle',function(){
+		if(!$scope.toggle){
+			$timeout(function(){
+				$('#code').removeClass('line-numbers');
+				$('.line-highlight').css('opacity',0);
+				$('#code .comment').css({'height':0,'display':'inline-block'});
+				setTimeout(function(){
+					$('.line-numbers-rows').css('display','none');
+					$('#code .comment').addClass('shrink');
+				},500);
+			})
+
+			$scope.icon='mode_comment';
+		}else{
+			$('#code .shrink').removeClass('shrink');
+			$('#code .comment').each(function(){
+				$(this).css({'height':$(this).attr('data-h')});
+			});
+			$('.line-numbers-rows').css('display','inline');				
+			setTimeout(function(){					
+				$('#code').addClass('line-numbers');
+				$('#code .comment').css({'display':'inline'});
+				$('.line-highlight').css('opacity',1);
+			},500);			
+			$scope.icon='comment';
+		}		
+	});
 	$scope.color=mdThemeColors;
 	$timeout(function(){
 		$scope.g.pageTitle=pageTitle;

@@ -1,6 +1,21 @@
 'use strict';
 
+/**
+ * # Parses the code data from JSDOC and generates the html
+ * @module template
+ * @chapter server
+ * */
+
+/**
+ * Deep clone a simple object. Ignores non-enumerable properties.
+ * @todo Not documented in the JSDOC documents
+ * @external
+ * */
 var doop = require('jsdoc/util/doop');
+/** The theme environment object provided by JSDOC
+ * @external
+ * @see module:jsdoc/env
+ * */
 var env = require('jsdoc/env');
 var fs = require('jsdoc/fs');
 var helper = require('jsdoc/util/templateHelper');
@@ -19,10 +34,15 @@ var hasOwnProp = Object.prototype.hasOwnProperty;
 var data;
 var view;
 var ngdocs=[];
-
-
+if (env.opts.query.demo > 0){
+	var unknown = 'JSdoc'
+}else{
+	var unknown = 'Undefined'
+}
+var reserved=['class','external','global','mixin','module','namespace','event','classes','externals','globals','mixins','modules','namespaces','events']
 
 var outdir = path.normalize(env.opts.destination);
+
 
 function modname(name){
 	
@@ -231,14 +251,16 @@ function generate(title, docs, filename, resolveLinks) {
 	
 	var outpath = path.join(outdir, filename);
 	
-	if(title!=='Home'){
+	if(title!=='Home' && title!=='Base'){
 		var html = view.render('container.tmpl', docData);
 
 		if (resolveLinks) {
 			html = helper.resolveLinks(html); // turn {@link foo} into <a href="foodoc.html">foo</a>
 		}
-	}else{
+	}else if(title!=='Base'){
 		var html = view.render('layout.tmpl', docData);
+	}else{
+		var html = view.render('mainpage.tmpl', docData);
 	}
 
     fs.writeFileSync(outpath, html, 'utf8');
@@ -307,9 +329,27 @@ function attachModuleSymbols(doclets, modules) {
     });
 }
 
+function buildShallowNav(items,type,itemsSeen,linkToFnc){
+	var nav = '';
+	var globalNav = '';
+
+	items.forEach(function(g) {
+		//console.log(g);
+		if ( g.kind !== 'typedef' && !hasOwnProp.call(itemsSeen, g.longname) ) {	
+			globalNav += '<dm-menulink>' + linkToFnc(g.longname, g.name) + '</dm-menulink>';
+		}
+		itemsSeen[g.longname] = true;
+	});
+	nav+='<dm-item-wrapper>';
+	nav += '<dm-chapter-title>'+type+'</dm-chapter-title><dm-chapter >' + globalNav + '</dm-chapter>';
+	nav+='</dm-item-wrapper>';	
+		
+	return nav;
+};
 
 function buildMemberNav(items, itemHeading, itemsSeen, linktoFn, chapter) {
     var nav = '';
+    var itemsNav = '';
 
 	function build(array){
 		if (array.length) {
@@ -338,7 +378,7 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn, chapter) {
 
 		}
 	}
-	var itemsNav = '';
+	
 
 	if(Array.isArray(items)){
 		build(items);
@@ -367,8 +407,12 @@ function linktoExternal(longName, name) {
     return linkto(longName, name.replace(/(^"|"$)/g, ''));
 }
 
+
+ 
 /**
  * Create the navigation sidebar.
+ * 
+ * @constructor
  * @param {object} members The members that will be used to create the sidebar.
  * @param {array<object>} members.classes
  * @param {array<object>} members.externals
@@ -379,133 +423,136 @@ function linktoExternal(longName, name) {
  * @param {array<object>} members.tutorials
  * @param {array<object>} members.events
  * @param {array<object>} members.interfaces
- * @return {string} The HTML for the navigation sidebar.
- */
+ * @param {array<object>} members.ngdocTypes - One for each type used
+ * @return {function() | string} function() -> The HTML for the navigation sidebar.
+ * */
 function buildNav(members) {
-    var nav = '';
-    var chapters={members:{},list:{}};
-    var seenTutorials = {};
-	var seen={};
-	
-	for (var key in members) {
-		members[key].forEach(function(doclet){
-			if(doclet.kind==='module'){
-				chapters.list[doclet.longname]=doclet.chapter;				
-			}
-		});		
-	}
+	return function(){
+		/** The string of HTML for the navigation **/
+		var nav = '';
+		/** Object divided into containers for each chapter **/
+		var chapters={members:{},list:{}};
+		var seenTutorials = {};
+		var seen={};
 
-	for (var key in members) {
-		
-		members[key].forEach(function(doclet){
-
-			if(doclet.chapter){
-					
-				if(!chapters.members[doclet.chapter]){
-					chapters.members[doclet.chapter]={};
+		for (var key in members) {
+			members[key].forEach(function(doclet){
+				if(doclet.kind==='module'){
+					chapters.list[doclet.longname]=doclet.chapter;				
 				}
-				if(!chapters.members[doclet.chapter][key]){
-					chapters.members[doclet.chapter][key]=[];
-				}
-				chapters.members[doclet.chapter][key].push(doclet);				
-			}else if(doclet.scope!=='global'){						
-				if(!chapters.members['undefined']){
-					chapters.members['undefined']={}							
-				}
-				if(!chapters.members['undefined'][key]){
-					chapters.members['undefined'][key]=[];
-				}
-						
-				chapters.members['undefined'][key].push(doclet);				
-			}
-		});				
-	}
-
-	function tag(array){
-		var modules={};
-		array.forEach(function(doclet){
-			if(!modules[doclet.module]){
-				modules[doclet.module]=[];
-			}
-			modules[doclet.module].push(doclet);
-		});
-		return modules;
-	}
-
-	for (var chapter in chapters.members) {
-		
-
-		var array=chapters.members[chapter];
-		nav += `\n\t\t\t\t<dm-item-wrapper>
-					<dm-chapter-title>${chapter}</dm-chapter-title>
-					<dm-chapter-deep>`;
-		if(array.modules){
-			nav += buildMemberNav(array.modules, 'Modules', {}, linkto, chapter);
-		};
-		ngdocs.forEach(function(type){
-				
-			if(array[type]){
-				nav += buildMemberNav(tag(array[type]), type+'s', {}, linkto, chapter);
-			};
-				
-		});
-		if(array.externals){
-			nav += buildMemberNav(array.externals, 'Externals', seen, linktoExternal,chapter);
+			});		
 		}
-		if(array.classes){
-			nav += buildMemberNav(tag(array.classes), 'Classes', seen, linkto,chapter);
-		}
-		if(array.events){
-			nav += buildMemberNav(tag(array.events), 'Events', seen, linkto,chapter);
-		}
-		if(array.namespaces){
-			nav += buildMemberNav(tag(array.namespaces), 'Namespaces', seen, linkto,chapter);
-		}
-		if(array.mixins){
-			nav += buildMemberNav(tag(array.mixins), 'Mixins', seen, linkto,chapter);
-		}
-		nav += `\n\t\t\t\t\t</dm-chapter-deep>
-				</dm-item-wrapper>\n`
-		
-	}
-	nav += buildMemberNav(members.tutorials, 'Tutorials', seenTutorials, linktoTutorial);
-	nav += buildMemberNav(members.interfaces, 'Interfaces', seen, linkto);
-	
-    if (members.globals.length) {
-        var globalNav = '';
 
-        members.globals.forEach(function(g) {
-            if ( g.kind !== 'typedef' && !hasOwnProp.call(seen, g.longname) ) {
-                globalNav += '<dm-menulink>' + linkto(g.longname, g.name) + '</dm-menulink>';
-            }
-            seen[g.longname] = true;
-        });
-
-        if (!globalNav) {
-            // turn the heading into a link so you can actually get to the global page
-            nav += '<h3>' + linkto('global', 'Global') + '</h3>';
-        }
-        else {
+		for (var key in members) {
 			
-			nav+='<dm-item-wrapper>';
-            nav += '<dm-chapter-title>Global</dm-chapter-title><dm-chapter >' + globalNav + '</dm-chapter>';
-            nav+='</dm-item-wrapper>';
-            
-        }
-    }
-    return nav;
+			members[key].forEach(function(doclet){
+
+				if(doclet.chapter){
+						
+					if(!chapters.members[doclet.chapter]){
+						chapters.members[doclet.chapter]={};
+					}
+					if(!chapters.members[doclet.chapter][key]){
+						chapters.members[doclet.chapter][key]=[];
+					}
+					chapters.members[doclet.chapter][key].push(doclet);				
+				}else if(doclet.scope!=='global'){						
+					if(!chapters.members[unknown]){
+						chapters.members[unknown]={}							
+					}
+					if(!chapters.members[unknown][key]){
+						chapters.members[unknown][key]=[];
+					}
+							
+					chapters.members[unknown][key].push(doclet);				
+				}
+			});				
+		}
+
+		function tag(array){
+			var modules={};
+			array.forEach(function(doclet){
+				if(!modules[doclet.module]){
+					modules[doclet.module]=[];
+				}
+				modules[doclet.module].push(doclet);
+			});
+			return modules;
+		}
+
+		for (var chapter in chapters.members) {
+			
+
+			var array=chapters.members[chapter];
+			nav += `\n\t\t\t\t<dm-item-wrapper>
+						<dm-chapter-title>${chapter}</dm-chapter-title>
+						<dm-chapter-deep>`;
+			if(array.modules){
+				nav += buildMemberNav(array.modules, 'Modules', {}, linkto, chapter);
+			};
+			ngdocs.forEach(function(type){
+					
+				if(array[type]){
+					nav += buildMemberNav(tag(array[type]), type+'s', {}, linkto, chapter);
+				};
+					
+			});
+			if(array.externals){
+				nav += buildMemberNav(array.externals, 'Externals', seen, linktoExternal,chapter);
+			}
+			if(array.classes){
+				nav += buildMemberNav(tag(array.classes), 'Classes', seen, linkto,chapter);
+			}
+			if(array.events){
+				nav += buildMemberNav(tag(array.events), 'Events', seen, linkto,chapter);
+			}
+			if(array.namespaces){
+				nav += buildMemberNav(tag(array.namespaces), 'Namespaces', seen, linkto,chapter);
+			}
+			if(array.mixins){
+				nav += buildMemberNav(tag(array.mixins), 'Mixins', seen, linkto,chapter);
+			}
+			if(array.interfaces){
+				nav += buildMemberNav(members.interfaces, 'Interfaces', seen, linkto,chapter);
+			}
+			nav += `\n\t\t\t\t\t</dm-chapter-deep>
+					</dm-item-wrapper>\n`
+			
+		}
+
+
+		if (members.globals.length) {
+			nav += buildShallowNav(members.globals,'globals',seen,linkto)
+		}
+		if (members.tutorials.length) {
+			nav += buildShallowNav(members.tutorials,'tutorials',seenTutorials,linktoTutorial)
+		}
+		
+		return nav;
+	}
 }
 
-/**
-    @param {TAFFY} taffyData See <http://taffydb.com/>.
-    @param {object} opts
-    @param {Tutorial} tutorials
- */
+
+
+/** 
+ * @param {TAFFY} taffyData See <http://taffydb.com/>.
+ * @param {object} opts
+ * @param {Tutorial} tutorials
+ * @see {@link module:server/theme~publish|The publish namespace}
+ * */
 exports.publish = function(taffyData, opts, tutorials) {
 
+	/**
+	 * @namespace publish
+	 * @see {@link module:server/theme.publish|Methods:publish} 
+	 * */
+	
     data = taffyData;
 
-
+	/**
+	 * The template configuration taken from {@link module:server/theme~external:env|the external environment} or blank if none 
+	 * @var module:server/theme~publish.conf
+	 * **/
     var conf = env.conf.templates || {};
     conf.default = conf.default || {};
 
@@ -537,6 +584,7 @@ exports.publish = function(taffyData, opts, tutorials) {
 
 	
     data().each(function(doclet) {
+
 
          doclet.attribs = '';
 
@@ -649,23 +697,33 @@ exports.publish = function(taffyData, opts, tutorials) {
 	
 	
     data().each(function(doclet) {
-        var url = helper.longnameToUrl[doclet.longname];
 
-        if (url.indexOf('#') > -1) {
-            doclet.id = helper.longnameToUrl[doclet.longname].split(/#/).pop();
-        }
-        else {
-            doclet.id = doclet.name;
-        }
 		
 		// custom for ngdoc
 		if(doclet.kind === 'module' && !doclet.chapter){
-			doclet.chapter='undefined';
+			doclet.chapter=unknown;
 		}
 		if(doclet.ngdoc){
-			doclet.kind=doclet.ngdoc;
-			if(ngdocs.indexOf(doclet.ngdoc) === -1){
-				ngdocs.push(doclet.ngdoc);
+			var kind=doclet.ngdoc.toLowerCase();
+			if(reserved.indexOf(kind) > -1){
+				logger.warn('%s %s','@ngdoc "'+doclet.ngdoc+'" is a system reserved name.','Docomatix did not document it as an Angular component but rather as a "'+doclet.kind+'".\n');
+			}else{
+				doclet.kind=doclet.ngdoc;
+				if(ngdocs.indexOf(doclet.ngdoc) === -1){
+					ngdocs.push(doclet.ngdoc);
+				}				
+			}
+
+			
+			if(doclet.meta.code.id){
+				
+				var pops=doclet.longname.split('~');
+				pops.pop();
+				pops=pops.join('~');
+				doclet.setMemberof(pops);
+				//doclet.setLongname(pops+'~'+doclet.name);
+				doclet.setScope('inner');
+				//helper.createLink(doclet);				
 			}
 			
 		}
@@ -694,11 +752,18 @@ exports.publish = function(taffyData, opts, tutorials) {
 		};
 		var newname=[];	
 		if(doclet.kind==='namespace'){
-				rename(doclet);	
-						
+				rename(doclet);						
 		}		
 		// end custom for ngdoc
 		
+        var url = helper.longnameToUrl[doclet.longname];
+
+        if (url.indexOf('#') > -1) {
+            doclet.id = helper.longnameToUrl[doclet.longname].split(/#/).pop();
+        }
+        else {
+            doclet.id = doclet.name;
+        }		
 		
         if ( needsSignature(doclet) ) {
             addSignatureParams(doclet);
@@ -732,8 +797,6 @@ exports.publish = function(taffyData, opts, tutorials) {
     ngdocs.forEach(function(type){
 		if(!members[type]){
 			members[type]=helper.find( data, {kind: type} )
-		}else{
-			console.log(members[type]+' is a system reserved type - ngdoc did not document');
 		}		
 		
 	});
@@ -756,7 +819,8 @@ exports.publish = function(taffyData, opts, tutorials) {
 
     // once for all
     
-    view.nav = buildNav(members);
+
+    view.nav = new buildNav(members)();
   
     attachModuleSymbols( find({ longname: {left: 'module:'} }), members.modules );
 
@@ -771,11 +835,8 @@ exports.publish = function(taffyData, opts, tutorials) {
     var files = find({kind: 'file'}),
         packages = find({kind: 'package'});
 
-    generate('Home',
-        packages.concat(
-            [{kind: 'mainpage', readme: opts.readme, longname: (opts.mainpagetitle) ? opts.mainpagetitle : 'Main Page'}]
-        ).concat(files),
-    indexUrl);
+    generate('Home',[],indexUrl);
+    generate('Base',{longname: (opts.mainpagetitle) ? opts.mainpagetitle : 'Main Page'},'base.html');
 
     // set up the lists that we'll use to generate pages
 
@@ -787,10 +848,9 @@ exports.publish = function(taffyData, opts, tutorials) {
     var mixins = taffy(members.mixins);
     var externals = taffy(members.externals);
     var interfaces = taffy(members.interfaces);
+    
     var ngdocref={}
-
     ngdocs.forEach(function(type){
-		
 		ngdocref[type]=taffy(members[type]);
 		
 	});
@@ -809,6 +869,7 @@ exports.publish = function(taffyData, opts, tutorials) {
 
 		
         var mySections = helper.find(sections, {longname: longname});
+        
         if (mySections.length) {			
             generate('Section: ' + mySections[0].name, mySections, helper.longnameToUrl[longname]);
         }

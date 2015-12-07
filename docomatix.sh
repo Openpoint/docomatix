@@ -5,23 +5,20 @@ var fs=require('fs');
 var rootdir=path.resolve(__dirname,'../../');
 var execSync = require('child_process').execSync;
 
-function create(){
-	
-}
 
 try {
 	fs.statSync(rootdir+'/dmx_config.json');
 	var confpath=rootdir+'/dmx_config.json';
 	var settings=JSON.parse(fs.readFileSync(confpath,'UTF8'));
 	console.log('\nCreating documents at "'+path.resolve(rootdir,settings.opts.destination)+'".\n');
-	var command = rootdir+'/node_modules/docomatix/node_modules/.bin/jsdoc --configure '+confpath;
+	var command = rootdir+'/node_modules/docomatix/node_modules/.bin/jsdoc --configure '+confpath+' --query demo=0';
 	var demo = false;
 }
 catch(e){
 	var confpath=__dirname+'/demo/dmx_config.json';
 	var settings=JSON.parse(fs.readFileSync(confpath,'UTF8'));
 	console.log('\nCreating sample documents at "'+rootdir+'/dmx_demo".\n');
-	var command = rootdir+'/node_modules/docomatix/node_modules/.bin/jsdoc --configure '+confpath+' --verbose';
+	var command = rootdir+'/node_modules/docomatix/node_modules/.bin/jsdoc --configure '+confpath+' --verbose --query demo=1';
 	var demo=true;
 }
 

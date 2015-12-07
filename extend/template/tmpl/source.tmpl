@@ -1,9 +1,7 @@
-<div>source.tmpl</div>
+<div class='templateid'>source.tmpl</div>
 <?js
-    var data = obj;
+	var data = obj;
 ?>
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code><?js= data.code ?></code></pre>
-        </article>
-    </section>
+<md-button id='shrink' class="md-fab md-mini shrink" aria-label="Shrink lines" ng-click="toggle = !toggle" ng-class="{'open':toggle}"><md-icon class="material-icons">{{icon}}</md-icon></md-button>
+<pre flex id="code" class='wide line-numbers' data-line="{{hashno}}"><code class="prism language-javascript"><?js= data.code ?></code></pre>
+
