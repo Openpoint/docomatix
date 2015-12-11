@@ -23,8 +23,16 @@
 
 <body ng-controller='main' layout layout-fill>
 	<md-sidenav class="md-sidenav-left md-whiteframe-8dp" md-component-id="left" md-is-locked-open="$mdMedia('gt-md')">
-		<md-toolbar class="md-primary md-whiteframe-4dp" layout-align='center center' style='z-index:10'>
-			<a href="./">Home</a>
+		<md-toolbar class="md-whiteframe-4dp" layout layout-padding layout-align="start center" style='z-index:10'>
+			<div><a href="./"><md-icon style="font-size:1.5em; margin-bottom:13px">home</md-icon></a></div>
+			<div flex>
+				<md-input-container id='search'>
+					<!-- Use floating placeholder instead of label -->
+					<label>search</label>
+					<md-icon style="color:white">search</md-icon>
+					<input ng-model="search" type="search">
+				</md-input-container>
+			</div>
 		</md-toolbar>
 		<md-content flex style="background:{{color.primary.default}};overflow-x:hidden">
 			<dm-sidemen>

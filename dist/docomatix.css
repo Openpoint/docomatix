@@ -1,3 +1,14 @@
+#search{
+	margin-right:20px;
+}
+#search label{
+	color:white;
+	opacity:.5;
+}
+#search input{
+	border-color:rgba(255,255,255,.5);
+	color:white;
+}
 .templateid {
 	display:none;
 	color:red;

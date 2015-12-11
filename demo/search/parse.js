@@ -1,4 +1,6 @@
-#!/usr/bin/env node
+"use strict";
+
+console.log('Parsing files for help index');
 
 var parse5 = require('parse5');
 var http = require('http');
@@ -28,10 +30,12 @@ function parse(stream,file){
 		}
 				
 		if(count < allFiles.length){
-			html=fs.createReadStream(p+'/'+allFiles[count]);
+			html=fs.createReadStream(dmatix.docLocation+'/'+allFiles[count]);
 			parse(html,allFiles[count]);
+
 		}else{
-			console.log(index);
+			dmatix.searchIndex=index;
+			//console.log(dmatix.searchIndex);
 		}
 		count++
 	});
@@ -55,8 +59,7 @@ function parse(stream,file){
 	});
 }
 
-var p = "dmx_demo"
-var allFiles = fs.readdirSync(p);
+var allFiles = fs.readdirSync(dmatix.docLocation);
 var count=0;
-var html=fs.createReadStream(p+'/'+allFiles[count]);
+var html=fs.createReadStream(dmatix.docLocation+'/'+allFiles[count]);
 parse(html,allFiles[count]);

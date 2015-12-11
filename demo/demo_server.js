@@ -17,13 +17,15 @@ var path = require('path');
 var server = require('http').Server(app);
 var op = require('openport');
 
-var docLocation = path.resolve(__dirname,'../../../dmx_demo');
+global.dmatix={};
+dmatix.docLocation = path.resolve(__dirname,'../../../dmx_demo');
+
 
 app.get(['/help', '/help/*'], function(req, res){
-	res.sendFile(docLocation+'/');
+	res.sendFile(dmatix.docLocation+'/');
 })
 
-app.use(express.static(docLocation));
+app.use(express.static(dmatix.docLocation));
 app.use(express.static(path.resolve(__dirname,'../../../node_modules/docomatix')));
 app.use(express.static(path.resolve(__dirname,'../../../node_modules/docomatix/node_modules')));
 
@@ -39,5 +41,5 @@ op.find(
 		});
 	}
 );
-
+require('./search/parse.js');
 
