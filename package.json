@@ -33,7 +33,8 @@
     "express": "^4.13.3",
     "jquery": "^2.1.4",
     "jsdoc": "git+https://github.com/jsdoc3/jsdoc.git#3.4.0",
-    "openport": "0.0.4"
+    "openport": "0.0.4",
+    "parse5": "^2.0.1"
   },
   "gitHead": "fb605f2c8bb3b934a8158a78ffe3999c846ad6db",
   "readme": "# docomatix\nDocument generator built on JSDOC tailored for Node + Angular modular projects\n",
