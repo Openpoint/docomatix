@@ -209,9 +209,7 @@ function dmcontent() {
 
 
 
-
 dmAtix.factory("dmContent", dmcontent)
-
 .directive("dmSidemen",["dmContent", function(dmContent){
 
     return {
@@ -389,44 +387,12 @@ dmAtix.factory("dmContent", dmcontent)
 	return {
 		restrict: 'C',
 		link: function postLink(scope, element, attrs) {
-			$location.hash($location.$$hash.replace('line','code.'));
+			//$location.hash($location.$$hash.replace('line','code.'));
 			scope.hashno=$location.$$hash.split('.')[1];
-			
-	
-			
-			//var text = $(element[0]).html();
-			//text = text.replace(/\[del\]\([\s\S*?\)\[\/del\]/ig, '');
-			
-			//console.log(text);
-			//$(element[0]).html(text);
-			/*
-			element.html(prettyPrintOne(replaceText(element.html()),'',true));
-			var source = document.getElementsByClassName('prettyprint source linenums');
-			var i = 0;
-			var lineNumber = 0;
-			var lineId;
-			var lines;
-			var totalLines;
-			var anchorHash;
-
-			if (source && source[0]) {
-				anchorHash = document.location.hash.substring(1);
-				lines = source[0].getElementsByTagName('li');
-				totalLines = lines.length;
-
-				for (; i < totalLines; i++) {
-					lineNumber++;
-					lineId = 'line' + lineNumber;
-					lines[i].id = lineId;
-										
-					if (lineId === anchorHash) {
-						lines[i].className += ' selected';						
-					}
-				}
-			};
-			* */
+			$('#main').css('opacity',0);
 			$timeout(function(){
 				Prism.highlightElement(element[0]);
+				$('#main').css('opacity',1);
 				$('#code .comment').css('display','inline-block');
 				$('#code .comment').each(function(){
 					var height=$(this).outerHeight();
@@ -458,8 +424,7 @@ dmAtix.factory("dmContent", dmcontent)
 	};
 
 })
-.controller('main',function($scope,$route, $routeParams, $location, $mdSidenav,$timeout, mdThemeColors){
-
+.controller('main',function($scope,$route,$routeParams,$location,$mdSidenav,$timeout,mdThemeColors){
 	$scope.color=mdThemeColors;
 	$scope.g={};
 	$scope.g.pageTitle='pageTitle';
@@ -471,7 +436,51 @@ dmAtix.factory("dmContent", dmcontent)
         $mdSidenav(menuId).toggle();
     };
 })
-.controller('viewCtrl',function($scope,$timeout, mdThemeColors){
+.controller('viewCtrl',function($scope,$timeout,$window,$mdSidenav,mdThemeColors){
+	var winwidth;
+	function fixwidth(){
+		$scope.winwidth={width:winwidth+'px'};
+		if($('#sourceouter')[0].scrollWidth < winwidth){
+			winwidth=winwidth-(winwidth-$('#sourceouter')[0].scrollWidth)
+			$scope.winwidth={width:winwidth+'px'};
+		}		
+	};
+	function checkside(){
+		if($('.md-sidenav-left').hasClass('md-locked-open-add') || $('.md-sidenav-left').hasClass('md-locked-open')){
+			return true;
+		}else{
+			return false;
+		};
+	};
+	
+		
+	$timeout(function(){
+		if($('#sourceouter')[0]){
+			if(checkside()){				
+				winwidth=$("body").innerWidth()-304;
+			}else{
+				winwidth=$window.screen.width;
+			}
+			
+			fixwidth();	
+		}		
+	});
+		
+	angular.element($window).bind('resize', function() {
+		if($('#sourceouter')[0]){
+			$timeout(function(){
+				if(checkside()){				
+					winwidth=$("body").innerWidth()-304;
+				}else{
+					winwidth=$window.screen.width;
+				}
+				fixwidth();
+								
+			});
+		}
+	})
+	
+	
 	$scope.toggle=true;
 	
 	$scope.$watch('toggle',function(){

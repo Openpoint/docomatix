@@ -4,6 +4,13 @@
  * # Parses the code data from JSDOC and generates the html
  * @module template
  * @chapter server
+ * @example Html
+ * <caption>This is html</caption>
+ * <div class='test'>Test</div>
+ * <p>This is a paragraph</p>
+ * @example javascript
+ * <caption>This is js</caption>
+ * console.log('hello doc');
  * */
 
 /**
@@ -44,14 +51,11 @@ var reserved=['class','external','global','mixin','module','namespace','event','
 var outdir = path.normalize(env.opts.destination);
 
 
-function modname(name){
-	
-	name=name.split('/');
-	
+function modname(name){	
+	name=name.split('/');	
 	if (name.length > 1){
 		name.shift();		
-	}
-	
+	}	
 	return name.join('/');
 }
 
@@ -277,7 +281,9 @@ function generateSourceFiles(sourceFiles, encoding) {
         try {
             source = {
                 kind: 'source',
-                code: helper.htmlsafe( fs.readFileSync(sourceFiles[file].resolved, encoding) )
+                code: helper.htmlsafe( fs.readFileSync(sourceFiles[file].resolved, encoding) ),
+                chapter: sourceFiles[file].chapter || 'globals',
+                name: sourceFiles[file].shortened
             };
         }
         catch(e) {
@@ -330,21 +336,32 @@ function attachModuleSymbols(doclets, modules) {
 }
 
 function buildShallowNav(items,type,itemsSeen,linkToFnc){
+
 	var nav = '';
 	var globalNav = '';
 
 	items.forEach(function(g) {
-		//console.log(g);
-		if ( g.kind !== 'typedef' && !hasOwnProp.call(itemsSeen, g.longname) ) {	
-			globalNav += '<dm-menulink>' + linkToFnc(g.longname, g.name) + '</dm-menulink>';
+		if (!g.chapter){
+
+			if ( g.kind !== 'typedef' && !hasOwnProp.call(itemsSeen, g.longname) ) {
+				if(g.children && g.children.length){
+					globalNav += '<dm-menulink><div class="subhead" style="border-bottom:1px solid {{color.primary.hue2}};color:{{color.primary.hue2}}">' + linkToFnc(g.longname, g.name) + '</div></dm-menulink>';
+					g.children.forEach(function(h){
+						globalNav += '<dm-menulink>' + linkToFnc(h.longname, h.name) + '</dm-menulink>';
+					});
+				}else{	
+					globalNav += '<dm-menulink>' + linkToFnc(g.longname, g.name) + '</dm-menulink>';
+				}
+			}
+			itemsSeen[g.longname] = true;
 		}
-		itemsSeen[g.longname] = true;
 	});
+
 	nav+='<dm-item-wrapper>';
 	nav += '<dm-chapter-title>'+type+'</dm-chapter-title><dm-chapter >' + globalNav + '</dm-chapter>';
-	nav+='</dm-item-wrapper>';	
-		
+	nav+='</dm-item-wrapper>';			
 	return nav;
+	
 };
 
 function buildMemberNav(items, itemHeading, itemsSeen, linktoFn, chapter) {
@@ -368,7 +385,15 @@ function buildMemberNav(items, itemHeading, itemsSeen, linktoFn, chapter) {
 						} else {
 							displayName = item.name;
 						}
-						itemsNav += '\n\t\t\t\t\t\t<dm-menulink>' + linktoFn(item.longname, item.name2 || displayName.replace(/\b(module|event):/g, '')) + '</dm-menulink>';
+						if(item.children && item.children.length){
+							item.title=item.name;
+							itemsNav += '\n\t\t\t\t\t\t<dm-menulink><div class="subhead" style="border-bottom:1px solid {{color.primary.hue2}};color:{{color.primary.hue2}}">' + linktoFn(item.longname, item.name) + '</div></dm-menulink>';
+						item.children.forEach(function(h){
+							itemsNav += '<dm-menulink>' + linktoFn(h.longname, h.name) + '</dm-menulink>';
+						});
+						}else{
+							itemsNav += '\n\t\t\t\t\t\t<dm-menulink>' + linktoFn(item.longname, item.name2 || displayName.replace(/\b(module|event):/g, '')) + '</dm-menulink>';
+						}
 
 						itemsSeen[item.longname] = true;
 					}
@@ -431,55 +456,51 @@ function buildNav(members) {
 		/** The string of HTML for the navigation **/
 		var nav = '';
 		/** Object divided into containers for each chapter **/
-		var chapters={members:{},list:{}};
+		var chapters={members:{},list:[]};
 		var seenTutorials = {};
 		var seen={};
-
+		var taggedTutorials = 0;
 		for (var key in members) {
 			members[key].forEach(function(doclet){
-				if(doclet.kind==='module'){
-					chapters.list[doclet.longname]=doclet.chapter;				
+				if(doclet.kind==='module' && chapters.list.indexOf(doclet.chapter) < 0){
+					chapters.list.push(doclet.chapter);				
 				}
 			});		
 		}
 
 		for (var key in members) {
 			
-			members[key].forEach(function(doclet){
 
+			members[key].forEach(function(doclet){
+				if(key==='tutorials' && chapters.list.indexOf(doclet.title) > -1){
+					doclet.chapter=doclet.title
+					taggedTutorials++;
+				}
 				if(doclet.chapter){
-						
-					if(!chapters.members[doclet.chapter]){
-						chapters.members[doclet.chapter]={};
-					}
-					if(!chapters.members[doclet.chapter][key]){
-						chapters.members[doclet.chapter][key]=[];
-					}
-					chapters.members[doclet.chapter][key].push(doclet);				
-				}else if(doclet.scope!=='global'){						
-					if(!chapters.members[unknown]){
-						chapters.members[unknown]={}							
-					}
-					if(!chapters.members[unknown][key]){
-						chapters.members[unknown][key]=[];
-					}
-							
+					chapters.members[doclet.chapter] = chapters.members[doclet.chapter] || {}	
+					chapters.members[doclet.chapter][key] = chapters.members[doclet.chapter][key] || [];
+					chapters.members[doclet.chapter][key].push(doclet);
+								
+				}else if(doclet.scope!=='global' && doclet.type!==2){	
+					chapters.members[unknown] = chapters.members[unknown] || {};
+					chapters.members[unknown][key] = chapters.members[unknown][key] || [];							
 					chapters.members[unknown][key].push(doclet);				
 				}
+
 			});				
 		}
-
+		
 		function tag(array){
 			var modules={};
 			array.forEach(function(doclet){
-				if(!modules[doclet.module]){
-					modules[doclet.module]=[];
-				}
+				modules[doclet.module] = modules[doclet.module] || [];
 				modules[doclet.module].push(doclet);
 			});
 			return modules;
 		}
-
+		if (members.tutorials.length && members.tutorials.length > taggedTutorials) {			
+			nav += buildShallowNav(members.tutorials,'Guides',seenTutorials,linktoTutorial)
+		}
 		for (var chapter in chapters.members) {
 			
 
@@ -487,6 +508,10 @@ function buildNav(members) {
 			nav += `\n\t\t\t\t<dm-item-wrapper>
 						<dm-chapter-title>${chapter}</dm-chapter-title>
 						<dm-chapter-deep>`;
+			if(array.tutorials){
+				nav += buildMemberNav(array.tutorials, 'Tutorials',seenTutorials,linktoTutorial,chapter);
+
+			}
 			if(array.modules){
 				nav += buildMemberNav(array.modules, 'Modules', {}, linkto, chapter);
 			};
@@ -498,23 +523,24 @@ function buildNav(members) {
 					
 			});
 			if(array.externals){
-				nav += buildMemberNav(array.externals, 'Externals', seen, linktoExternal,chapter);
+				nav += buildMemberNav(array.externals, 'Externals',seen,linktoExternal,chapter);
 			}
 			if(array.classes){
-				nav += buildMemberNav(tag(array.classes), 'Classes', seen, linkto,chapter);
+				nav += buildMemberNav(tag(array.classes), 'Classes',seen,linkto,chapter);
 			}
 			if(array.events){
-				nav += buildMemberNav(tag(array.events), 'Events', seen, linkto,chapter);
+				nav += buildMemberNav(tag(array.events), 'Events',seen,linkto,chapter);
 			}
 			if(array.namespaces){
-				nav += buildMemberNav(tag(array.namespaces), 'Namespaces', seen, linkto,chapter);
+				nav += buildMemberNav(tag(array.namespaces), 'Namespaces',seen,linkto,chapter);
 			}
 			if(array.mixins){
-				nav += buildMemberNav(tag(array.mixins), 'Mixins', seen, linkto,chapter);
+				nav += buildMemberNav(tag(array.mixins), 'Mixins',seen,linkto,chapter);
 			}
 			if(array.interfaces){
-				nav += buildMemberNav(members.interfaces, 'Interfaces', seen, linkto,chapter);
+				nav += buildMemberNav(members.interfaces, 'Interfaces',seen,linkto,chapter);
 			}
+
 			nav += `\n\t\t\t\t\t</dm-chapter-deep>
 					</dm-item-wrapper>\n`
 			
@@ -524,9 +550,7 @@ function buildNav(members) {
 		if (members.globals.length) {
 			nav += buildShallowNav(members.globals,'globals',seen,linkto)
 		}
-		if (members.tutorials.length) {
-			nav += buildShallowNav(members.tutorials,'tutorials',seenTutorials,linktoTutorial)
-		}
+
 		
 		return nav;
 	}
@@ -589,6 +613,17 @@ exports.publish = function(taffyData, opts, tutorials) {
          doclet.attribs = '';
 
         if (doclet.examples) {
+			
+			doclet.examples.forEach(function(example){
+				if (example.data.match(/^\s*<caption>([\s\S]+?)<\/caption>(\s*[\n\r])([\s\S]+)$/i)) {
+					example.caption = RegExp.$1;
+					example.code = RegExp.$3;
+				}else{
+					example.code=example.data;
+				}
+			});
+			
+			/*
             doclet.examples = doclet.examples.map(function(example) {
                 var caption, code;
 
@@ -602,6 +637,7 @@ exports.publish = function(taffyData, opts, tutorials) {
                     code: code || example
                 };
             });
+            * */
         }
         if (doclet.see) {
             doclet.see.forEach(function(seeItem, i) {
@@ -612,6 +648,7 @@ exports.publish = function(taffyData, opts, tutorials) {
         // build a list of source files
         var sourcePath;
         if (doclet.meta) {
+			
             sourcePath = getPathFromDoclet(doclet);
             sourceFiles[sourcePath] = {
                 resolved: sourcePath,
@@ -632,6 +669,7 @@ exports.publish = function(taffyData, opts, tutorials) {
     }
     fs.mkPath(outdir);
 
+	/*
     // copy the template's static files to outdir
     var fromDir = path.join(templatePath, 'static');
     var staticFiles = fs.ls(fromDir, 3);
@@ -641,7 +679,7 @@ exports.publish = function(taffyData, opts, tutorials) {
         fs.mkPath(toDir);
         fs.copyFileSync(fileName, toDir);
     });
-    
+    */
 
 	
     // copy user-specified static files to outdir
@@ -671,10 +709,12 @@ exports.publish = function(taffyData, opts, tutorials) {
             });
         });
     }
+   
 
     if (sourceFilePaths.length) {
         sourceFiles = shortenPaths( sourceFiles, path.commonPrefix(sourceFilePaths) );
     }
+
     
 
 	
@@ -697,11 +737,14 @@ exports.publish = function(taffyData, opts, tutorials) {
 	
 	
     data().each(function(doclet) {
-
-		
 		// custom for ngdoc
 		if(doclet.kind === 'module' && !doclet.chapter){
 			doclet.chapter=unknown;
+		}
+		//attach chapter to the source files
+		if(doclet.chapter){
+			var id = getPathFromDoclet(doclet);
+			 sourceFiles[id].chapter=doclet.chapter;
 		}
 		if(doclet.ngdoc){
 			var kind=doclet.ngdoc.toLowerCase();
@@ -734,10 +777,25 @@ exports.publish = function(taffyData, opts, tutorials) {
 			}else if(thisdoc && thisdoc.chapter){
 				doclet.chapter=thisdoc.chapter
 				doclet.module=modname(thisdoc.name);
+			}else if(doclet.alias && doclet.memberof){
+				var parent=find({longname:doclet.memberof});
+				parent.forEach(function(par){
+					if(par.chapter){
+						parent=par;
+						return;
+					}
+				});
+				doclet.chapter=parent.chapter;
+				if(parent.kind==='module'){
+					doclet.module=modname(parent.name);
+				}
 			}
 		}
 		if(doclet.kind!=='module'){			
 			tag(doclet);			
+		}
+		if(doclet.longname==='module:jsdoc/tag/dictionary'){
+			//console.log(doclet);
 		}
 		function rename(namespace){
 			newname.push(namespace.name);
@@ -829,7 +887,9 @@ exports.publish = function(taffyData, opts, tutorials) {
         generateSourceFiles(sourceFiles, opts.encoding);
     }
 
-    if (members.globals.length) { generate('Global', [{kind: 'globalobj'}], globalUrl); }
+    if (members.globals.length) {
+		generate('Global', [{kind: 'globalobj',chapter: 'globals',name:'global'}], globalUrl); 
+	}
 
     // index page displays information from package.json and lists files
     var files = find({kind: 'file'}),
@@ -912,7 +972,8 @@ exports.publish = function(taffyData, opts, tutorials) {
             title: title,
             header: tutorial.title,
             content: tutorial.parse(),
-            children: tutorial.children
+            children: tutorial.children,
+            chapter: tutorial.chapter || 'tutorial'
         };
 
         var tutorialPath = path.join(outdir, filename),

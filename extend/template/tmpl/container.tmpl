@@ -10,7 +10,7 @@
 	
     docs.forEach(function(doc, i) {
 ?>
-
+<var data-chapter="<?js= doc.chapter ?>" data-kind="<?js= doc.kind ?>" data-name="<?js= doc.name ?>"></var>
 <?js
     // we only need to check this once
     if (typeof isGlobalPage === 'undefined') {

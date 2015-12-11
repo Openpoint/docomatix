@@ -1,6 +1,7 @@
 {
-	"dad": {
-		"title": "Parent one",
+	"About The Server": {
+		"title": "server",
+		"chapter":"testing",
 		"children": {
 			"dad1": {
 				"title": "First child"
@@ -11,7 +12,7 @@
 		}
 	},
 	"mam": {
-		"title": "Parent two",
+		"title": "server",
 		"children": {
 			"mam1": {
 				"title": "First child"

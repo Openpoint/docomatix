@@ -20,7 +20,6 @@
 			"node_modules/docomatix/node_modules/jsdoc/plugins",
 			"node_modules/docomatix/node_modules/express",
 			"node_modules/docomatix/node_modules/jquery",
-			"node_modules/docomatix/demo",
 			"node_modules/docomatix/extend/template/static"],
         "includePattern": ".+\\.js(doc)?$",
         "excludePattern": "(^|\\/|\\\\)_"

@@ -12,6 +12,7 @@
  * @param {object} dictionary - The JSDOC dictionary object to extend
  * **/
 exports.defineTags = function(dictionary) {
+	
 
 	dictionary.defineTag('ngdoc', {
 		mustHaveValue: true,
@@ -49,5 +50,17 @@ exports.defineTags = function(dictionary) {
 		}
 	});
 	dictionary.defineSynonym('module','project');
-//console.log(dictionary)
+	
+	var languages=['javascript','css','html']
+	dictionary._tags.example.canHaveName = true;
+	dictionary._tags.example.onTagged = function (doclet, tag) {
+		if(languages.indexOf(tag.value.name.toLowerCase()) < 0){
+			tag.value.description=tag.value.name+' '+tag.value.description;
+			tag.value.name='javascript';
+		}
+		doclet.language=tag.value.name;
+		doclet.examples = doclet.examples || [];
+		//doclet.examples.push(tag.value.description);
+		doclet.examples.push({'data':tag.value.description,'lang':tag.value.name.toLowerCase()});
+	}
 };

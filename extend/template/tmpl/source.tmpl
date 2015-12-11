@@ -2,6 +2,8 @@
 <?js
 	var data = obj;
 ?>
+<div ng-style="winwidth" id='sourceouter'>
 <md-button id='shrink' class="md-fab md-mini shrink" aria-label="Shrink lines" ng-click="toggle = !toggle" ng-class="{'open':toggle}"><md-icon class="material-icons">{{icon}}</md-icon></md-button>
-<pre flex id="code" class='wide line-numbers' data-line="{{hashno}}"><code class="prism language-javascript"><?js= data.code ?></code></pre>
+<pre id="code" class='wide line-numbers' data-line="{{hashno}}" ><code class="prism language-javascript"><?js= data.code ?></code></pre>
 
+</div>
